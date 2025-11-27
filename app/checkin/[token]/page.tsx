@@ -1,20 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle, AlertTriangle, Loader2, User, Mail, ArrowRight } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { CheckCircle, AlertTriangle, Loader2, User, ArrowRight, LogOut } from 'lucide-react';
 
 export default function CheckInPage() {
   const params = useParams();
-  const token = params?.token as string; // Récupération robuste du token via le hook
+  const token = params?.token as string;
 
-  const [formData, setFormData] = useState({ email: '', initials: '' });
+  // State
+  const [user, setUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  
   const [status, setStatus] = useState<'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
   const [checkInResult, setCheckInResult] = useState<{ status: string } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 1. Vérifier si l'utilisateur est déjà connecté
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
+      setLoadingUser(false);
+    };
+
+    // Écouter les changements d'auth (ex: retour après login Google)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      }
+    });
+
+    getUser();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 2. Gérer le login Google
+  const handleGoogleLogin = async () => {
+    try {
+      // Redirige vers la même page après connexion pour ne pas perdre le token QR
+      const redirectTo = typeof window !== 'undefined' ? window.location.href : undefined;
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      setErrorMessage(error.message);
+      setStatus('ERROR');
+    }
+  };
+
+  // 3. Soumettre le pointage
+  const handleCheckIn = async () => {
     setStatus('LOADING');
     setErrorMessage('');
 
@@ -24,14 +73,21 @@ export default function CheckInPage() {
         return;
     }
 
+    if (!user) {
+        setErrorMessage("Erreur: Vous devez être connecté.");
+        setStatus('ERROR');
+        return;
+    }
+
     try {
       const response = await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
-          initials: formData.initials.toUpperCase(),
-          token: token, // Utilisation du token récupéré par useParams
+          email: user.email,
+          // Récupère le nom complet depuis les métadonnées Google
+          name: user.user_metadata?.full_name || user.user_metadata?.name || 'Inconnu',
+          token: token,
         }),
       });
 
@@ -47,6 +103,7 @@ export default function CheckInPage() {
     }
   };
 
+  // --- UI: SUCCESS ---
   if (status === 'SUCCESS') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-red-100 flex items-center justify-center p-4">
@@ -58,7 +115,7 @@ export default function CheckInPage() {
           </div>
           
           <h2 className="text-3xl font-extrabold text-slate-800 mb-2 tracking-tight">Pointage Réussi</h2>
-          <p className="text-slate-500 mb-8 font-medium">Votre présence a été enregistrée.</p>
+          <p className="text-slate-500 mb-8 font-medium">Merci {user?.user_metadata?.full_name?.split(' ')[0]} !</p>
           
           <div className="bg-slate-50 rounded-2xl p-5 text-left border border-slate-100 shadow-sm relative overflow-hidden">
              <div className="absolute left-0 top-0 w-1 h-full bg-emerald-500"></div>
@@ -84,10 +141,10 @@ export default function CheckInPage() {
     );
   }
 
+  // --- UI: AUTH / CHECKIN ---
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-rose-100 via-slate-50 to-white flex items-center justify-center p-4 lg:p-8">
       <div className="bg-white/80 p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-rose-900/10 w-full max-w-md relative overflow-hidden border border-white backdrop-blur-xl">
-        {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
         
@@ -96,70 +153,70 @@ export default function CheckInPage() {
              <User className="w-6 h-6" />
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Bienvenue</h1>
-          <p className="text-slate-500 mt-2 text-lg font-medium">Confirmez votre arrivée pour la session en cours.</p>
+          <p className="text-slate-500 mt-2 text-lg font-medium">
+             {user ? `Bonjour, ${user.user_metadata?.full_name}` : "Connectez-vous pour pointer."}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Professionnel</label>
-            <div className="relative group">
-              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-rose-500 transition-colors" />
-              <input 
-                id="email"
-                name="email"
-                autoComplete="email"
-                required
-                type="email" 
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 shadow-sm group-hover:border-rose-200"
-                placeholder="nom@entreprise.com"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="initials" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Vos Initiales</label>
-            <div className="relative group">
-              <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-rose-500 transition-colors" />
-              <input 
-                id="initials"
-                name="initials"
-                autoComplete="nickname"
-                required
-                type="text" 
-                maxLength={3}
-                value={formData.initials}
-                onChange={(e) => setFormData({...formData, initials: e.target.value.toUpperCase()})}
-                className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-slate-900 font-bold placeholder:text-slate-400 uppercase shadow-sm tracking-widest group-hover:border-rose-200"
-                placeholder="ABC"
-              />
-            </div>
-          </div>
-
-          {status === 'ERROR' && (
-            <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl text-sm flex items-center font-bold border border-rose-200 animate-in fade-in slide-in-from-top-2 shadow-sm">
+        {status === 'ERROR' && (
+            <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl text-sm flex items-center font-bold border border-rose-200 mb-6 animate-in fade-in slide-in-from-top-2 shadow-sm">
               <AlertTriangle className="w-5 h-5 mr-3 shrink-0 text-rose-600" />
               <span>{errorMessage}</span>
             </div>
-          )}
+        )}
 
+        {loadingUser ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
+          </div>
+        ) : !user ? (
+          // --- BOUTON GOOGLE ---
           <button 
-            type="submit" 
-            disabled={status === 'LOADING' || !formData.email || !formData.initials}
-            className="w-full bg-gradient-to-r from-rose-600 to-red-600 text-white py-4.5 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-rose-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0 flex items-center justify-center group relative overflow-hidden mt-4"
+            onClick={handleGoogleLogin}
+            className="w-full bg-white border border-slate-200 text-slate-700 py-4.5 rounded-2xl font-bold text-lg hover:shadow-lg hover:border-rose-200 transition-all flex items-center justify-center group relative overflow-hidden"
           >
-            <span className="relative z-10 flex items-center">
-                {status === 'LOADING' ? <Loader2 className="w-6 h-6 animate-spin" /> : (
-                    <>
-                    Valider maintenant 
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform opacity-80"/>
-                    </>
-                )}
-            </span>
-            <div className="absolute inset-0 h-full w-full bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+             <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+             </svg>
+             Continuer avec Google
           </button>
-        </form>
+        ) : (
+          // --- BOUTON VALIDER ---
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold">
+                 {user.user_metadata?.full_name?.charAt(0) || 'U'}
+               </div>
+               <div className="overflow-hidden">
+                 <p className="text-sm font-bold text-slate-900 truncate">{user.user_metadata?.full_name}</p>
+                 <p className="text-xs text-slate-500 truncate">{user.email}</p>
+               </div>
+            </div>
+
+            <button 
+              onClick={handleCheckIn}
+              disabled={status === 'LOADING'}
+              className="w-full bg-gradient-to-r from-rose-600 to-red-600 text-white py-4.5 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-rose-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group relative overflow-hidden"
+            >
+              <span className="relative z-10 flex items-center">
+                  {status === 'LOADING' ? <Loader2 className="w-6 h-6 animate-spin" /> : (
+                      <>
+                      Valider ma présence 
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform opacity-80"/>
+                      </>
+                  )}
+              </span>
+              <div className="absolute inset-0 h-full w-full bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+            </button>
+            
+            <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="w-full text-slate-400 text-sm font-medium hover:text-slate-600 flex items-center justify-center gap-1">
+               <LogOut className="w-3 h-3"/> Changer de compte
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
