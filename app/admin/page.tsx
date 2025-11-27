@@ -28,11 +28,11 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [adminError, setAdminError] = useState('');
-  
+   
   const [checkins, setCheckins] = useState<CheckIn[]>([]);
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [loading, setLoading] = useState(false);
-  
+   
   const [filterText, setFilterText] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Simple hardcoded password for demo
-    if (passwordInput === 'admin') {
+    if (passwordInput === 'Mecainox@admin') {
       setIsAuthenticated(true);
       fetchData(); // Load data immediately on login
     } else {
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
-  
+   
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
@@ -133,7 +133,8 @@ export default function AdminDashboard() {
               type="password" 
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              // UPDATED HERE: Added text-slate-800 and placeholder-slate-500
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 placeholder-slate-500"
               placeholder="Mot de passe..."
             />
             {adminError && <div className="text-rose-500 text-sm">{adminError}</div>}
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
           <button onClick={fetchData} className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" disabled={loading}>
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={() => setIsAuthenticated(false)} className="p-2 text-slate-400 hover:text-rose-600 rounded-lg">
+          <button onClick={() => setIsAuthenticated(false)} className="p-2 text-slate-500 hover:text-rose-600 rounded-lg">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
@@ -171,28 +172,28 @@ export default function AdminDashboard() {
         
         {/* Top Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          
+           
           {/* Active Session Card */}
           <div className="md:col-span-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Code QR Actif</h3>
+            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">Code QR Actif</h3>
             
             {activeSession ? (
               <div className="text-center">
                   <div className="bg-slate-900 text-white p-4 rounded-lg inline-block mb-3 font-mono text-2xl tracking-widest shadow-lg">
                     {activeSession.token}
                   </div>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-600">
                     Session: <strong>{activeSession.session_type === 'MORNING' ? 'Matin (08h)' : 'Après-midi (14h)'}</strong>
                   </p>
-                  <p className="text-xs text-slate-400 mt-2">Expire: {formatTime(activeSession.expires_at)}</p>
+                  <p className="text-xs text-slate-600 mt-2">Expire: {formatTime(activeSession.expires_at)}</p>
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-slate-400 text-sm mb-4">Aucune session active</p>
+                <p className="text-slate-600 text-sm mb-4">Aucune session active</p>
                 {/* Manual triggers for demo/testing purposes */}
                 <div className="flex gap-2 justify-center">
-                  <button onClick={() => forceGenerateSession('MORNING')} className="px-3 py-2 text-xs bg-slate-100 hover:bg-slate-200 rounded">Force Matin</button>
-                  <button onClick={() => forceGenerateSession('AFTERNOON')} className="px-3 py-2 text-xs bg-slate-100 hover:bg-slate-200 rounded">Force Aprèm</button>
+                  <button onClick={() => forceGenerateSession('MORNING')} className="px-3 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">Force Matin</button>
+                  <button onClick={() => forceGenerateSession('AFTERNOON')} className="px-3 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">Force Aprèm</button>
                 </div>
               </div>
             )}
@@ -202,7 +203,7 @@ export default function AdminDashboard() {
           <div className="md:col-span-2 grid grid-cols-3 gap-4">
               <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold text-slate-800">{checkins.length}</span>
-                <span className="text-xs text-slate-500 mt-1 uppercase">Total</span>
+                <span className="text-xs text-slate-600 mt-1 uppercase">Total</span>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold text-emerald-600">{checkins.filter(c => c.status === 'ON_TIME').length}</span>
@@ -221,19 +222,20 @@ export default function AdminDashboard() {
             <h3 className="font-bold text-slate-800">Historique</h3>
             <div className="flex gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input 
                   type="text" 
                   placeholder="Rechercher..." 
                   value={filterText}
                   onChange={(e) => setFilterText(e.target.value)}
-                  className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  // UPDATED HERE: Added placeholder-slate-500
+                  className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 placeholder-slate-500"
                 />
               </div>
               <select 
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-800"
               >
                 <option value="ALL">Tout</option>
                 <option value="ON_TIME">À l'heure</option>
@@ -242,10 +244,10 @@ export default function AdminDashboard() {
               </select>
             </div>
           </div>
-          
+           
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-700 uppercase text-xs font-semibold">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50 text-slate-800 uppercase text-xs font-semibold">
                 <tr>
                   <th className="px-6 py-3">Employé</th>
                   <th className="px-6 py-3">Session</th>
@@ -260,7 +262,7 @@ export default function AdminDashboard() {
                     <tr key={checkin.id} className="hover:bg-slate-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 mr-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 mr-3">
                             {checkin.initials}
                           </div>
                           <span className="font-medium text-slate-900">{checkin.email}</span>
@@ -268,26 +270,26 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         {checkin.session_type === 'MORNING' 
-                          ? <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">08h00</span>
-                          : <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded text-xs font-semibold">14h00</span>
+                          ? <span className="text-blue-700 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">08h00</span>
+                          : <span className="text-orange-700 bg-orange-50 px-2 py-1 rounded text-xs font-semibold">14h00</span>
                         }
                       </td>
-                      <td className="px-6 py-4 font-mono text-slate-500">
+                      <td className="px-6 py-4 font-mono text-slate-700">
                         {formatTime(checkin.checkin_time)}
                       </td>
                       <td className="px-6 py-4">
-                        {checkin.status === 'ON_TIME' && <span className="text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><CheckCircle className="w-3 h-3"/> À l'heure</span>}
-                        {checkin.status === 'LATE' && <span className="text-amber-700 bg-amber-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><Clock className="w-3 h-3"/> En retard</span>}
-                        {checkin.status === 'ABSENT' && <span className="text-rose-700 bg-rose-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><XCircle className="w-3 h-3"/> Absent</span>}
+                        {checkin.status === 'ON_TIME' && <span className="text-emerald-800 bg-emerald-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><CheckCircle className="w-3 h-3"/> À l'heure</span>}
+                        {checkin.status === 'LATE' && <span className="text-amber-800 bg-amber-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><Clock className="w-3 h-3"/> En retard</span>}
+                        {checkin.status === 'ABSENT' && <span className="text-rose-800 bg-rose-100 px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1"><XCircle className="w-3 h-3"/> Absent</span>}
                       </td>
-                      <td className="px-6 py-4 text-slate-400">
+                      <td className="px-6 py-4 text-slate-600">
                         {formatDate(checkin.checkin_time)}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400">Aucune donnée disponible.</td>
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-600">Aucune donnée disponible.</td>
                   </tr>
                 )}
               </tbody>
