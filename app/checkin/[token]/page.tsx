@@ -101,10 +101,13 @@ export default function CheckInPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Professionnel</label>
+            <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Professionnel</label>
             <div className="relative group">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-rose-500 transition-colors" />
               <input 
+                id="email"
+                name="email"
+                autoComplete="email"
                 required
                 type="email" 
                 value={formData.email}
@@ -116,10 +119,13 @@ export default function CheckInPage() {
           </div>
           
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Vos Initiales</label>
+            <label htmlFor="initials" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Vos Initiales</label>
             <div className="relative group">
               <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-rose-500 transition-colors" />
               <input 
+                id="initials"
+                name="initials"
+                autoComplete="nickname"
                 required
                 type="text" 
                 maxLength={3}
