@@ -156,7 +156,7 @@ export default function AdminDashboard() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <Shield className="text-white w-5 h-5" />
           </div>
-          <h1 className="font-bold text-slate-800 text-lg hidden sm:block">Dashboard RH</h1>
+          <h1 className="font-bold text-slate-800 text-lg hidden sm:block">Dashboard MECA-INOX</h1>
         </div>
         <div className="flex gap-2">
           <button onClick={fetchData} className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100" disabled={loading}>
