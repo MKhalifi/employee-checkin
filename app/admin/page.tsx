@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/20 text-white">
             <Shield className="w-5 h-5" />
           </div>
-          <h1 className="font-bold text-slate-900 text-xl tracking-tight">Dashboard RH</h1>
+          <h1 className="font-bold text-slate-900 text-xl tracking-tight">Dashboard MECAINOX</h1>
         </div>
         <div className="flex gap-3">
           <button onClick={fetchData} className="px-4 py-2.5 text-rose-700 bg-rose-50 border border-rose-100 rounded-xl hover:bg-rose-100 font-semibold flex items-center gap-2 transition-colors">
