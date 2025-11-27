@@ -14,7 +14,7 @@ export default function AdminDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === 'admin') {
+    if (passwordInput === 'Mecainox@admin') {
       setIsAuthenticated(true);
       fetchData();
     }
