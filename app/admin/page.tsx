@@ -64,7 +64,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
+    // CHANGE HERE: Changed 'bg-slate-50/50' to 'bg-white'
+    <div className="min-h-screen bg-white flex flex-col font-sans">
       <header className="bg-white border-b border-slate-200/60 px-6 py-5 flex justify-between items-center sticky top-0 z-20 backdrop-blur-md bg-white/80">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/20 text-white">
