@@ -124,8 +124,8 @@ export default function CheckInPage() {
                  checkInResult?.status === 'ON_TIME' ? 'text-emerald-700' : 
                  checkInResult?.status === 'LATE' ? 'text-amber-700' : 'text-rose-700'
                }`}>
-                 {checkInResult?.status === 'ON_TIME' ? "✅ À l'heure" : 
-                  checkInResult?.status === 'LATE' ? "⚠️ En retard" : "Absent"}
+                 {checkInResult?.status === 'ON_TIME' ? "À l'heure" : 
+                  checkInResult?.status === 'LATE' ? "En retard" : "Absent"}
                </span>
              </div>
              <div className="flex justify-between text-base">
