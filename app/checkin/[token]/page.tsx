@@ -118,16 +118,9 @@ export default function CheckInPage() {
           
           <div className="bg-slate-50 rounded-2xl p-5 text-left border border-slate-100 shadow-sm relative overflow-hidden">
              <div className="absolute left-0 top-0 w-1 h-full bg-emerald-500"></div>
-             <div className="flex justify-between text-base mb-3 pb-3 border-b border-slate-200/60">
-               <span className="text-slate-500 font-medium">Statut</span>
-               <span className={`font-bold inline-flex items-center ${
-                 checkInResult?.status === 'ON_TIME' ? 'text-emerald-700' : 
-                 checkInResult?.status === 'LATE' ? 'text-amber-700' : 'text-rose-700'
-               }`}>
-                 {checkInResult?.status === 'ON_TIME' ? "À l'heure" : 
-                  checkInResult?.status === 'LATE' ? "En retard" : "Absent"}
-               </span>
-             </div>
+             
+             {/* STATUT REMOVED HERE */}
+
              <div className="flex justify-between text-base">
                <span className="text-slate-500 font-medium">Heure</span>
                <span className="font-bold font-mono text-slate-900">
