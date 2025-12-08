@@ -114,8 +114,8 @@ export default function CheckInPage() {
             <CheckCircle className="text-emerald-500 w-12 h-12" />
           </div>
           
-          <h2 className="text-3xl font-extrabold text-slate-800 mb-2 tracking-tight">Pointage Réussi</h2>
-          <p className="text-slate-500 mb-8 font-medium">Merci {user?.user_metadata?.full_name?.split(' ')[0]} !</p>
+          <h2 className="text-3xl font-extrabold text-slate-800 mb-2 tracking-tight">Merci {user?.user_metadata?.full_name?.split(' ')[0]} !</h2>
+          <p className="text-slate-500 mb-8 font-medium">Meca-inox</p>
           
           <div className="bg-slate-50 rounded-2xl p-5 text-left border border-slate-100 shadow-sm relative overflow-hidden">
              <div className="absolute left-0 top-0 w-1 h-full bg-emerald-500"></div>
