@@ -38,27 +38,43 @@ export default function AdminDashboard() {
     });
   }, [checkins, filterText]);
 
-  // --- NOUVELLE LOGIQUE : Calcul du statut basé sur l'heure ---
+  // --- NOUVELLE LOGIQUE EXACTE (Tolérance 10min, Retard jusqu'à 30min, sinon Absent) ---
   const getComputedStatus = (checkinTime: string, sessionType: string) => {
     if (!checkinTime) return 'ABSENT';
     
     const date = new Date(checkinTime);
-    // Calcul du nombre de minutes depuis minuit (ex: 08:00 = 480 min)
+    // On convertit l'heure du pointage en minutes totales depuis minuit
     const totalMinutes = date.getHours() * 60 + date.getMinutes();
 
-    // Limites strictes
-    const MORNING_LIMIT = 8 * 60;       // 08:00 -> 480 min
-    const AFTERNOON_LIMIT = 14 * 60;    // 14:00 -> 840 min
-
     if (sessionType === 'MORNING') {
-      return totalMinutes > MORNING_LIMIT ? 'LATE' : 'ON_TIME';
+      // Session Matin (08:00)
+      // 08:10 = 490 minutes
+      // 08:30 = 510 minutes
+      
+      if (totalMinutes <= 490) {
+        return 'ON_TIME'; // Jusqu'à 08:10 inclus
+      } else if (totalMinutes <= 510) {
+        return 'LATE';    // De 08:11 à 08:30 inclus
+      } else {
+        return 'ABSENT';  // Après 08:30
+      }
+
     } else {
-      // Session après-midi (ou autre)
-      return totalMinutes > AFTERNOON_LIMIT ? 'LATE' : 'ON_TIME';
+      // Session Après-midi (14:00)
+      // 14:10 = 850 minutes
+      // 14:30 = 870 minutes
+
+      if (totalMinutes <= 850) {
+        return 'ON_TIME'; // Jusqu'à 14:10 inclus
+      } else if (totalMinutes <= 870) {
+        return 'LATE';    // De 14:11 à 14:30 inclus
+      } else {
+        return 'ABSENT';  // Après 14:30
+      }
     }
   };
 
-  // Calcul des stats basé sur la nouvelle logique (pour la cohérence avec le tableau)
+  // Calcul des statistiques basé sur la nouvelle logique
   const stats = useMemo(() => {
     let onTimeCount = 0;
     let lateCount = 0;
@@ -67,6 +83,7 @@ export default function AdminDashboard() {
       const status = getComputedStatus(c.checkin_time, c.session_type);
       if (status === 'ON_TIME') onTimeCount++;
       if (status === 'LATE') lateCount++;
+      // Les 'ABSENT' ne sont pas comptés dans ces deux catégories mais sont dans le total
     });
 
     return { onTimeCount, lateCount };
@@ -142,7 +159,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Stats Cards - Updated with calculated stats */}
+          {/* Stats Cards */}
           <div className="md:col-span-2 grid grid-cols-3 gap-4">
             {[
               { label: 'Total Pointages', count: checkins.length, color: 'text-slate-900', bg: 'bg-white', icon: Users },
@@ -193,7 +210,6 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredCheckins.map((c) => {
-                  // Calcul du statut pour cette ligne
                   const computedStatus = getComputedStatus(c.checkin_time, c.session_type);
 
                   return (
@@ -220,7 +236,6 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-slate-500 font-mono text-xs font-medium bg-slate-100 px-2 py-1 rounded w-fit">
-                          {/* Affichage Date et Heure */}
                           {new Date(c.checkin_time).toLocaleString('fr-FR', {
                             day: '2-digit',
                             month: '2-digit',
