@@ -38,6 +38,40 @@ export default function AdminDashboard() {
     });
   }, [checkins, filterText]);
 
+  // --- NOUVELLE LOGIQUE : Calcul du statut basé sur l'heure ---
+  const getComputedStatus = (checkinTime: string, sessionType: string) => {
+    if (!checkinTime) return 'ABSENT';
+    
+    const date = new Date(checkinTime);
+    // Calcul du nombre de minutes depuis minuit (ex: 08:00 = 480 min)
+    const totalMinutes = date.getHours() * 60 + date.getMinutes();
+
+    // Limites strictes
+    const MORNING_LIMIT = 8 * 60;       // 08:00 -> 480 min
+    const AFTERNOON_LIMIT = 14 * 60;    // 14:00 -> 840 min
+
+    if (sessionType === 'MORNING') {
+      return totalMinutes > MORNING_LIMIT ? 'LATE' : 'ON_TIME';
+    } else {
+      // Session après-midi (ou autre)
+      return totalMinutes > AFTERNOON_LIMIT ? 'LATE' : 'ON_TIME';
+    }
+  };
+
+  // Calcul des stats basé sur la nouvelle logique (pour la cohérence avec le tableau)
+  const stats = useMemo(() => {
+    let onTimeCount = 0;
+    let lateCount = 0;
+
+    checkins.forEach(c => {
+      const status = getComputedStatus(c.checkin_time, c.session_type);
+      if (status === 'ON_TIME') onTimeCount++;
+      if (status === 'LATE') lateCount++;
+    });
+
+    return { onTimeCount, lateCount };
+  }, [checkins]);
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-rose-50/50 flex items-center justify-center p-4">
@@ -64,7 +98,6 @@ export default function AdminDashboard() {
   }
 
   return (
-    // CHANGE HERE: Changed 'bg-slate-50/50' to 'bg-white'
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <header className="bg-white border-b border-slate-200/60 px-6 py-5 flex justify-between items-center sticky top-0 z-20 backdrop-blur-md bg-white/80">
         <div className="flex items-center gap-4">
@@ -109,12 +142,12 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Cards - Updated with calculated stats */}
           <div className="md:col-span-2 grid grid-cols-3 gap-4">
             {[
               { label: 'Total Pointages', count: checkins.length, color: 'text-slate-900', bg: 'bg-white', icon: Users },
-              { label: "À l'heure", count: checkins.filter(c => c.status === 'ON_TIME').length, color: 'text-emerald-600', bg: 'bg-emerald-50/50', icon: CheckCircle },
-              { label: 'En Retard', count: checkins.filter(c => c.status === 'LATE').length, color: 'text-rose-600', bg: 'bg-rose-50/50', icon: Clock }
+              { label: "À l'heure", count: stats.onTimeCount, color: 'text-emerald-600', bg: 'bg-emerald-50/50', icon: CheckCircle },
+              { label: 'En Retard', count: stats.lateCount, color: 'text-rose-600', bg: 'bg-rose-50/50', icon: Clock }
             ].map((stat, i) => (
               <div key={i} className={`${stat.bg} p-5 rounded-[1.5rem] border border-transparent shadow-sm hover:shadow-md transition-all flex flex-col justify-between group`}>
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.bg === 'bg-white' ? 'bg-slate-100 text-slate-600' : 'bg-white shadow-sm'} group-hover:scale-110 transition-transform`}>
@@ -159,58 +192,64 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCheckins.map((c) => (
-                  <tr key={c.id} className="hover:bg-rose-50/30 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-xs font-black text-rose-700 mr-3 border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
-                          {c.name ? c.name.charAt(0) : (c.initials || 'U')}
+                {filteredCheckins.map((c) => {
+                  // Calcul du statut pour cette ligne
+                  const computedStatus = getComputedStatus(c.checkin_time, c.session_type);
+
+                  return (
+                    <tr key={c.id} className="hover:bg-rose-50/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-xs font-black text-rose-700 mr-3 border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
+                            {c.name ? c.name.charAt(0) : (c.initials || 'U')}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900">{c.name || 'Nom inconnu'}</div>
+                            <div className="text-xs text-slate-500">{c.email}</div>
+                          </div>
                         </div>
-                        <div>
-                           <div className="font-bold text-slate-900">{c.name || 'Nom inconnu'}</div>
-                           <div className="text-xs text-slate-500">{c.email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
+                          c.session_type === 'MORNING' 
+                            ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                            : 'bg-orange-50 text-orange-600 border-orange-100'
+                        }`}>
+                          {c.session_type === 'MORNING' ? '08:00' : '14:00'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-slate-500 font-mono text-xs font-medium bg-slate-100 px-2 py-1 rounded w-fit">
+                          {/* Affichage Date et Heure */}
+                          {new Date(c.checkin_time).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                       <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${
-                         c.session_type === 'MORNING' 
-                           ? 'bg-blue-50 text-blue-600 border-blue-100' 
-                           : 'bg-orange-50 text-orange-600 border-orange-100'
-                       }`}>
-                         {c.session_type === 'MORNING' ? '08:00' : '14:00'}
-                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-  <div className="flex items-center gap-2 text-slate-500 font-mono text-xs font-medium bg-slate-100 px-2 py-1 rounded w-fit">
-    {new Date(c.checkin_time).toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}
-  </div>
-</td>
-                    <td className="px-6 py-4">
-                      {c.status === 'ON_TIME' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100/50 text-emerald-700 border border-emerald-100">
-                          <CheckCircle className="w-3.5 h-3.5"/> À l'heure
-                        </span>
-                      )}
-                      {c.status === 'LATE' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100/50 text-amber-700 border border-amber-100">
-                          <Clock className="w-3.5 h-3.5"/> Retard
-                        </span>
-                      )}
-                      {c.status === 'ABSENT' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100/50 text-rose-700 border border-rose-100">
-                          <XCircle className="w-3.5 h-3.5"/> Absent
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        {computedStatus === 'ON_TIME' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100/50 text-emerald-700 border border-emerald-100">
+                            <CheckCircle className="w-3.5 h-3.5"/> À l'heure
+                          </span>
+                        )}
+                        {computedStatus === 'LATE' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100/50 text-amber-700 border border-amber-100">
+                            <Clock className="w-3.5 h-3.5"/> Retard
+                          </span>
+                        )}
+                        {computedStatus === 'ABSENT' && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100/50 text-rose-700 border border-rose-100">
+                            <XCircle className="w-3.5 h-3.5"/> Absent
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
